@@ -38,7 +38,7 @@ OUT_DIR = ROOT / "out" / PART
 
 # --- Parameters (mm) ---
 PEG_D = 5.0
-CLEARANCES = (0.1, 0.2, 0.3, 0.4)
+CLEARANCES = (0.1, 0.2, 0.3, 0.5)
 HOLE_PITCH = 12.0
 EDGE_MARGIN = 5.0
 PLATE_T = 4.0
