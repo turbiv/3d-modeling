@@ -1,7 +1,31 @@
-# CAD rules (all units mm)
+# 3D modeling workspace
 
-Project root: this folder. Python env: `.venv` (Python 3.12, build123d, bd_warehouse, trimesh, manifold3d, ocp_vscode).
-Run parts with `.venv/bin/python parts/<part>.py`.
+This folder is a CAD workspace. I describe physical parts; you model them as parametric
+build123d scripts, render them, look at them, and iterate with me until they're right.
+I never run commands or edit files myself — you do all of it.
+
+## How every session works (do this without being asked)
+
+1. **Start the viewer first.** Call preview_start with name `cad-viewer` (http://localhost:3940).
+   It shows in the Browser pane, where I watch the model live. If it's already running, reuse it.
+2. **When I describe a part:** list the dimensions you're using and ask only about real gaps
+   (functional dimensions come from my caliper numbers, not guesses). Then build a first version
+   right away — don't wait for a perfect spec.
+3. **Build loop, after every change:**
+   - Write/edit `parts/<part>.py`. The PostToolUse hook runs it; it must export to `out/<part>/`,
+     which makes the viewer reload within ~1 s.
+   - Look at it yourself: screenshot the viewer (Iso, plus Top/Front/Right/Bottom/X-ray as relevant).
+     The build123d MCP render tools are also available for extra views.
+   - Check numbers: bounding box, volume, solid count, validity, key dimensions asserted in the script.
+   - Fix anything wrong before replying. Then tell me briefly what changed and what to look at.
+4. **I give feedback in plain words** ("wall looks thin", "move the hole left 5 mm"). Make targeted
+   edits and repeat the loop. Expect many small iterations.
+5. **When I say it's done:** confirm STL/3MF/STEP are in `out/<part>/`, commit, and push.
+
+## CAD rules (all units mm)
+
+Python env: `.venv` (Python 3.12, build123d, bd_warehouse, trimesh, manifold3d).
+Run parts with `.venv/bin/python parts/<part>.py`. Use the b123d-modeling skill for build123d help.
 
 - Every dimension is a named UPPER_CASE parameter at the top of the part file. No literal numbers in geometry.
 - One part per file in parts/. Assemblies: one file, parts laid out in print orientation.
@@ -12,16 +36,15 @@ Run parts with `.venv/bin/python parts/<part>.py`.
 - Default wall 1.6 mm; thicker where screws bear load.
 - Threads, fasteners, bearings, gears: use bd_warehouse. Read its installed docs / the build123d://bd_warehouse resource before using it.
 - Apply fillets last; if the kernel refuses a radius, retry smaller.
-- Before modeling from a drawing or photo, list every dimension you read and ask me to confirm gaps. Functional dimensions come from my caliper measurements, not from images.
-- After every change, report bounding box, volume, solid count, validity, and assert key dimensions against the spec. Use renders only to confirm topology. `mesh_check: skipped` is not a pass.
+- Report bounding box, volume, solid count, validity, and assert key dimensions against the spec. Renders confirm shape; numbers are the source of truth. `mesh_check: skipped` is not a pass.
 - Make targeted edits; don't rewrite a working file.
-- Export binary STL (mm) + 3MF + STEP to out/<part>/. Commit source and outputs together.
-- Don't call show(); the live viewer reads out/ directly.
-
-## Viewer (shared between me and Claude)
-- At the start of any modeling session, start the viewer with the Browser pane: preview_start name `cad-viewer` (http://localhost:3940). It is a local three.js page (viewer/) served by viewer/serve.py.
-- It shows the newest out/<part>/<part>.stl and reloads within ~1 s of a rebuild. `?part=<name>` pins a part.
-- Every part script exports when run, and the PostToolUse hook runs it after each edit, so an edit updates the viewer automatically.
-- After each change, look at it yourself: screenshot the viewer (Iso plus whichever of Top/Front/Right/Bottom shows the change; X-ray for internal features) and check the shape matches the intent before reporting back. Numbers from the build report remain the source of truth.
-- I give feedback by looking at the same pane; don't ask me to run anything.
+- Every part script, when run, validates and exports binary STL (mm) + 3MF + STEP to out/<part>/<part>.*. Use coupons/fit_coupon.py as the template for structure, checks and export.
+- Don't call show(); the viewer reads out/ directly.
+- Commit source and outputs together.
 - Never run the build123d-mcp server in HTTP mode beyond localhost (it has no auth).
+
+## Viewer details
+
+viewer/serve.py (stdlib, localhost only) + viewer/index.html (three.js). It follows the newest
+exported part; `?part=<name>` pins one. Buttons: Iso, Top, Front, Right, Back, Bottom, Edges,
+X-ray, Bed (shows the printer envelope from printer.json).
