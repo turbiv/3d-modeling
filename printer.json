@@ -1,0 +1,12 @@
+{
+  "name": "library-default",
+  "nozzle_mm": 0.4,
+  "material": "PLA",
+  "envelope_mm": [200, 180, 180],
+  "min_wall_mm": 1.6,
+  "hole_allowance_mm": 0.3,
+  "slide_clearance_mm": 0.25,
+  "max_overhang_deg": 45,
+  "max_bridge_mm": 14,
+  "proven": false
+}
