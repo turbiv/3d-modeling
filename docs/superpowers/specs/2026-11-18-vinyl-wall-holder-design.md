@@ -21,7 +21,7 @@ mounted with a single 3M Command **medium** strip so it removes cleanly.
 3. Wall plate + clip-on ledge. Extra part with no gain since Command already removes cleanly.
 
 ## Design (parameters, all adjustable)
-- Width 76; back plate 60 tall × 3 thick; floor 3 thick; jacket gap 10 (was 9: an 8 mm jacket would touch the plate top); front lip 3 thick × 12 tall above floor, rounded top; lip root kept sharp so the jacket seats at the lip face. Visible ledge depth 16 mm (+ strip thickness).
+- Width 76; back plate 60 tall × 3 thick; floor 3 thick; jacket gap 11 (was 9: an 8 mm jacket would touch the plate top; widened to 11 so jackets up to ~9.5 mm lean on the wall, up to 11 mm fit); front lip 3 thick × 12 tall above floor, rounded top; lip root kept sharp so the jacket seats at the lip face. Visible ledge depth 17 mm (+ strip thickness).
 - Lean comes from the lip position: ~1° for an 8 mm jacket, ~2° for a 3 mm one. No angled geometry needed.
 - Print on its side (L/U profile on the bed, 76 mm tall): no overhangs, layer lines can't split the lip off.
 

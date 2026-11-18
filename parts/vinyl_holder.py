@@ -28,7 +28,7 @@ WIDTH = 76.0  # along the wall; reference product width (7.6 cm)
 BACK_T = 3.0  # back plate thickness
 BACK_H = 60.0  # back plate height, hidden behind the jacket
 FLOOR_T = 3.0
-JACKET_GAP = 10.0  # plate-to-lip channel; thickest jacket 8 mm (caliper) + play
+JACKET_GAP = 11.0  # plate-to-lip channel; jackets up to ~9.5 mm still lean on the wall
 LIP_T = 3.0
 LIP_H = 12.0  # lip height above the floor
 LIP_FILLET = 1.4  # rounded lip top so it doesn't mark covers
@@ -70,6 +70,15 @@ def plate_clearance(jacket_t: float) -> float:
     """Gap between the jacket's back face and the plate front, at the plate top."""
     rise = BACK_H - FLOOR_T
     return (LIP_X0 - jacket_t) - rise * math.tan(math.radians(lean_deg(jacket_t))) - BACK_T
+
+
+def max_jacket_on_wall() -> float:
+    """Thickest jacket that still clears the plate top by MIN_PLATE_CLEARANCE (bisection)."""
+    lo, hi = 0.0, JACKET_GAP
+    while hi - lo > EPS:
+        mid = (lo + hi) / 2
+        lo, hi = (mid, hi) if plate_clearance(mid) >= MIN_PLATE_CLEARANCE else (lo, mid)
+    return lo
 
 
 def build():
@@ -165,6 +174,7 @@ def main():
     print(f"channel_mm: {JACKET_GAP}  lip_above_floor_mm: {LIP_H}")
     print(f"lean_deg: {lean_thick:.2f} ({JACKET_T_MAX} mm jacket) .. {lean_thin:.2f} ({JACKET_T_MIN} mm jacket)")
     print(f"plate_top_clearance_mm ({JACKET_T_MAX} mm jacket): {clear:.2f}")
+    print(f"max_jacket_on_wall_mm: {max_jacket_on_wall():.1f}  (fits up to {JACKET_GAP} mm)")
     print(f"mesh_check: watertight={mc['watertight']} manifold={mc['manifold_status']}")
     print(f"exported: {sorted(p.name for p in OUT_DIR.iterdir())}")
 
