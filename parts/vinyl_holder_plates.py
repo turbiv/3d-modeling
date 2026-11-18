@@ -7,6 +7,7 @@ Which plate fits which booking (booking minus ~45 min margin):
   0.2 mm: Oodi 8 h -> plate_6, Pasila 6 h -> plate_4
   0.3 mm: Oodi 8 h -> plate_9, Pasila 6 h -> plate_6
   plate_2: first test pair (print one at 0.2 and compare) or the leftovers.
+Chosen: 0.2 mm. For 20 holders: plate_2 (test) + plate_6 x 3 at Oodi. Print card: out/vinyl_holder_plates/PRINT.md
 """
 
 import json

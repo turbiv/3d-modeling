@@ -24,6 +24,7 @@ mounted with a single 3M Command **medium** strip so it removes cleanly.
 - Width 76; back plate 60 tall × 2 thick; floor 2 thick (2 mm walls: ~30× strength margin, half the print time of 3 mm); jacket gap 11 (was 9: an 8 mm jacket would touch the plate top; widened to 11 so jackets up to ~9.5 mm lean on the wall, up to 11 mm fit); front lip 2 thick × 12 tall above floor, rounded top; lip root kept sharp so the jacket seats at the lip face. Visible ledge depth 15 mm (+ strip thickness).
 - Lean comes from the lip position: ~1° for an 8 mm jacket, ~2° for a 3 mm one. No angled geometry needed.
 - Print floor down, as mounted (changed from on-its-side, for looks): glossy underside, both ends match, horizontal layer lines along the lip, no brim. Strength margin ~10–20× across layers. 0.4 mm 45° bevel on the bed edges hides first-layer squish. Cura: Z seam at the back of the plate, support off, skirt.
+- **Chosen: 0.2 mm layers (best looks).** Plan for 20: plate_2 test pair first, then Oodi plate_6 × 3 (18 + 2 = 20). Pasila fallback: plate_4.
 - Plates (parts/vinyl_holder_plates.py, one row): 0.2 mm layers — Oodi plate_6 (~7.0 h), Pasila plate_4 (~4.6 h); 0.3 mm — Oodi plate_9 (~7.2 h), Pasila plate_6 (~4.8 h); plate_2 for the test pair / leftovers.
 
 ## Left to the builder
