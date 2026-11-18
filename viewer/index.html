@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CAD Viewer</title>
+<style>
+  :root { --bg:#1e1f22; --panel:#2b2d31; --text:#e6e6e6; --muted:#9aa0a6; --accent:#4c8dff; --line:#4a4d55; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--text);
+    font:13px -apple-system, system-ui, sans-serif; overflow:hidden; }
+  #bar { position:absolute; top:0; left:0; right:0; z-index:2; display:flex; flex-wrap:wrap; gap:6px;
+    align-items:center; padding:8px 12px; background:var(--panel); border-bottom:1px solid var(--line); }
+  select, button { background:#3a3d43; color:var(--text); border:1px solid var(--line); border-radius:6px;
+    padding:4px 9px; font:inherit; cursor:pointer; }
+  button:hover, select:hover { border-color:var(--accent); }
+  button.on { border-color:var(--accent); color:#fff; }
+  label { display:flex; align-items:center; gap:4px; color:var(--muted); }
+  .sep { width:1px; height:20px; background:var(--line); margin:0 4px; }
+  #status { margin-left:auto; color:var(--muted); }
+  #info { position:absolute; left:12px; bottom:12px; z-index:2; background:rgba(43,45,49,.92);
+    border:1px solid var(--line); border-radius:8px; padding:8px 11px; line-height:1.6;
+    font-variant-numeric:tabular-nums; }
+  #info b { font-size:14px; }
+  #empty { position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    color:var(--muted); font-size:15px; pointer-events:none; }
+  canvas { display:block; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="bar">
+  <select id="part" title="Part"></select>
+  <label><input type="checkbox" id="follow" checked> follow latest</label>
+  <span class="sep"></span>
+  <button data-view="iso">Iso</button>
+  <button data-view="top">Top</button>
+  <button data-view="front">Front</button>
+  <button data-view="right">Right</button>
+  <button data-view="back">Back</button>
+  <button data-view="bottom">Bottom</button>
+  <span class="sep"></span>
+  <button id="edges" class="on">Edges</button>
+  <button id="xray">X-ray</button>
+  <button id="bed" class="on">Bed</button>
+  <span id="status">connecting…</span>
+</div>
+<div id="info" hidden></div>
+<div id="empty">No exported parts yet. Parts appear here once out/&lt;part&gt;/&lt;part&gt;.stl exists.</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+
+THREE.Object3D.DEFAULT_UP.set(0, 0, 1); // CAD convention: Z up
+
+const $ = (id) => document.getElementById(id);
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1e1f22);
+const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 10000);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x3a3a48, 1.1));
+const keyLight = new THREE.DirectionalLight(0xffffff, 1.8);
+keyLight.position.set(0.5, 1, 1);
+camera.add(keyLight);
+scene.add(camera);
+
+const partGroup = new THREE.Group();
+const bedGroup = new THREE.Group();
+scene.add(partGroup, bedGroup);
+
+const solidMat = new THREE.MeshStandardMaterial({
+  color: 0x8fb3e0, roughness: 0.55, metalness: 0.05, flatShading: true,
+  polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1, side: THREE.DoubleSide,
+});
+const edgeMat = new THREE.LineBasicMaterial({ color: 0x101114 });
+const loader = new STLLoader();
+
+let envelope = [200, 180, 180];
+let bbox = null;
+let current = null;      // part name being shown
+let shownMtime = 0;
+let showEdges = true, showBed = true, xray = false;
+
+fetch('/api/printer').then(r => r.json()).then(p => { envelope = p.envelope_mm || envelope; if (bbox) drawBed(); }).catch(() => {});
+
+function resize() {
+  const w = window.innerWidth, h = window.innerHeight;
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+resize();
+
+function disposeGroup(g) {
+  g.traverse(o => { if (o.geometry) o.geometry.dispose(); });
+  g.clear();
+}
+
+function drawBed() {
+  disposeGroup(bedGroup);
+  if (!bbox) return;
+  const [ex, ey] = envelope;
+  const c = bbox.getCenter(new THREE.Vector3());
+  const x0 = c.x - ex / 2, y0 = c.y - ey / 2, z = bbox.min.z - 0.01;
+  const pts = [];
+  for (let x = 0; x <= ex + 1e-6; x += 10) pts.push(x0 + x, y0, z, x0 + x, y0 + ey, z);
+  for (let y = 0; y <= ey + 1e-6; y += 10) pts.push(x0, y0 + y, z, x0 + ex, y0 + y, z);
+  const grid = new THREE.BufferGeometry();
+  grid.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+  bedGroup.add(new THREE.LineSegments(grid, new THREE.LineBasicMaterial({ color: 0x34373d })));
+  const frame = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(x0, y0, z), new THREE.Vector3(x0 + ex, y0, z),
+    new THREE.Vector3(x0 + ex, y0 + ey, z), new THREE.Vector3(x0, y0 + ey, z), new THREE.Vector3(x0, y0, z),
+  ]);
+  bedGroup.add(new THREE.Line(frame, new THREE.LineBasicMaterial({ color: 0x5a5e66 })));
+  bedGroup.visible = showBed;
+}
+
+const VIEWS = {
+  iso: [1, -1.3, 0.9], top: [0, -0.0001, 1], bottom: [0, 0.0001, -1],
+  front: [0, -1, 0], back: [0, 1, 0], right: [1, 0, 0],
+};
+function setView(name = 'iso') {
+  if (!bbox) return;
+  const c = bbox.getCenter(new THREE.Vector3());
+  const r = bbox.getSize(new THREE.Vector3()).length() / 2 || 10;
+  const dist = r / Math.sin(THREE.MathUtils.degToRad(camera.fov / 2)) * 1.05;
+  const d = new THREE.Vector3(...VIEWS[name]).normalize();
+  camera.position.copy(c).addScaledVector(d, dist);
+  camera.near = dist / 100; camera.far = dist * 20; camera.updateProjectionMatrix();
+  controls.target.copy(c);
+  controls.update();
+}
+
+function fmt(n) { return (Math.round(n * 100) / 100).toFixed(2); }
+
+async function load(name, mtime) {
+  const res = await fetch(`/out/${encodeURIComponent(name)}/${encodeURIComponent(name)}.stl?t=${mtime}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const geom = loader.parse(await res.arrayBuffer());
+  if (!geom.attributes.position || geom.attributes.position.count === 0) throw new Error('empty STL');
+  geom.computeVertexNormals();
+  geom.computeBoundingBox();
+
+  const samePart = name === current;
+  disposeGroup(partGroup);
+  const mesh = new THREE.Mesh(geom, solidMat);
+  const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geom, 20), edgeMat);
+  edges.visible = showEdges;
+  partGroup.add(mesh, edges);
+
+  bbox = geom.boundingBox.clone();
+  current = name;
+  shownMtime = mtime;
+  drawBed();
+  if (!samePart) setView('iso');
+
+  const s = bbox.getSize(new THREE.Vector3());
+  const [ex, ey, ez] = envelope;
+  const fits = s.x <= ex && s.y <= ey && s.z <= ez;
+  $('info').hidden = false;
+  $('info').innerHTML =
+    `<b>${name}</b><br>` +
+    `size ${fmt(s.x)} × ${fmt(s.y)} × ${fmt(s.z)} mm<br>` +
+    `${fits ? 'fits' : '<span style="color:#ff7b72">exceeds</span>'} bed ${ex} × ${ey} × ${ez} mm<br>` +
+    `${(geom.attributes.position.count / 3).toLocaleString()} triangles · updated ${new Date(mtime * 1000).toLocaleTimeString()}`;
+  $('empty').style.display = 'none';
+}
+
+let parts = [];
+const params = new URLSearchParams(location.search);
+if (params.get('part')) $('follow').checked = false;
+let wanted = params.get('part');
+
+function renderSelect() {
+  const sel = $('part');
+  const names = parts.map(p => p.name);
+  if (sel.options.length !== names.length || [...sel.options].some((o, i) => o.value !== names[i])) {
+    sel.innerHTML = names.map(n => `<option value="${n}">${n}</option>`).join('');
+  }
+  if (current) sel.value = current;
+}
+
+async function poll() {
+  try {
+    parts = await (await fetch('/api/parts', { cache: 'no-store' })).json();
+    renderSelect();
+    if (!parts.length) { $('empty').style.display = 'flex'; $('status').textContent = 'live'; }
+    else {
+      const target = $('follow').checked ? parts[0] : (parts.find(p => p.name === (wanted || current)) || parts[0]);
+      if (target.name !== current || target.mtime !== shownMtime) {
+        try { await load(target.name, target.mtime); renderSelect(); }
+        catch (e) { $('status').textContent = `retrying (${e.message})`; }
+      }
+      $('status').textContent = 'live';
+    }
+  } catch {
+    $('status').textContent = 'viewer server offline';
+  }
+  setTimeout(poll, 1000);
+}
+
+$('part').addEventListener('change', (e) => {
+  $('follow').checked = false;
+  wanted = e.target.value;
+  history.replaceState(null, '', `?part=${encodeURIComponent(wanted)}`);
+});
+$('follow').addEventListener('change', (e) => { if (e.target.checked) { wanted = null; history.replaceState(null, '', '/'); } });
+document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
+$('edges').addEventListener('click', (e) => {
+  showEdges = !showEdges; e.target.classList.toggle('on', showEdges);
+  partGroup.children.forEach(o => { if (o.isLineSegments) o.visible = showEdges; });
+});
+$('xray').addEventListener('click', (e) => {
+  xray = !xray; e.target.classList.toggle('on', xray);
+  solidMat.transparent = xray; solidMat.opacity = xray ? 0.35 : 1; solidMat.depthWrite = !xray; solidMat.needsUpdate = true;
+});
+$('bed').addEventListener('click', (e) => {
+  showBed = !showBed; e.target.classList.toggle('on', showBed); bedGroup.visible = showBed;
+});
+
+// Hook for Claude: window.cad.setView('top') etc.
+window.cad = { setView, get part() { return current; } };
+
+(function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+})();
+poll();
+</script>
+</body>
+</html>

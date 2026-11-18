@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "cad-viewer",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["viewer/serve.py", "3940"],
+      "port": 3940
+    }
+  ]
+}
