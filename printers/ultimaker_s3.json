@@ -1,0 +1,16 @@
+{
+  "name": "ultimaker_s3",
+  "where": "Helsinki libraries: Oodi (3D-tulostin 1 black PLA, 2 white PLA), Pasila Konehuone",
+  "source": "https://varaamo.hel.fi/reservation-unit/208",
+  "nozzle_mm": 0.4,
+  "material": "Ultimaker PLA",
+  "envelope_mm": [230, 190, 200],
+  "min_wall_mm": 1.6,
+  "hole_allowance_mm": 0.3,
+  "slide_clearance_mm": 0.25,
+  "max_overhang_deg": 45,
+  "max_bridge_mm": 14,
+  "booking_max_h": {"oodi": 8, "pasila": 6},
+  "booking_margin_h": 0.75,
+  "proven": false
+}

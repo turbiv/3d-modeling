@@ -5,8 +5,10 @@ and its top leans on the wall at ~1-2°. A tall back plate hides behind the jack
 and carries one 3M Command medium strip, mounted vertically with the tab pointing
 down out under the ledge.
 
-Print orientation: side profile flat on the bed, extruded WIDTH upward (Z).
-X = away from the wall (0 = wall face of the plate), Y = up the wall (0 = underside of floor).
+Print orientation = mounted orientation: floor down on the bed (best looks: glossy
+underside, matching ends, horizontal layer lines along the lip, no brim).
+X = away from the wall (0 = wall face of the plate), Y = along the wall, Z = up.
+The profile is drawn in XY (Y = up) and extruded, then rotated floor-down.
 Spec: docs/superpowers/specs/2026-11-18-vinyl-wall-holder-design.md
 """
 
@@ -16,7 +18,7 @@ from pathlib import Path
 
 import manifold3d
 import trimesh
-from build123d import Axis, Mesher, Polygon, export_step, export_stl, extrude, fillet
+from build123d import Axis, Mesher, Polygon, Pos, Rot, chamfer, export_step, export_stl, extrude, fillet
 
 ROOT = Path(__file__).resolve().parent.parent
 PRINTER = json.loads((ROOT / "printer.json").read_text())
@@ -25,14 +27,16 @@ OUT_DIR = ROOT / "out" / PART
 
 # --- Parameters (mm) ---
 WIDTH = 76.0  # along the wall; reference product width (7.6 cm)
-BACK_T = 3.0  # back plate thickness
+BACK_T = 2.0  # back plate thickness (2 mm: ~30x margin on a 0.6 kg record, half the print time of 3 mm)
 BACK_H = 60.0  # back plate height, hidden behind the jacket
-FLOOR_T = 3.0
+FLOOR_T = 2.0
 JACKET_GAP = 11.0  # plate-to-lip channel; jackets up to ~9.5 mm still lean on the wall
-LIP_T = 3.0
+LIP_T = 2.0
 LIP_H = 12.0  # lip height above the floor
-LIP_FILLET = 1.4  # rounded lip top so it doesn't mark covers
-TOP_FILLET = 1.4  # rounded plate top
+LIP_FILLET = 0.9  # rounded lip top so it doesn't mark covers (< LIP_T / 2)
+TOP_FILLET = 0.9  # rounded plate top (< BACK_T / 2)
+BED_CHAMFER = 0.4  # 45° bevel on the bed-face edges hides first-layer squish on the visible underside
+FLOOR_DOWN_DEG = 90.0  # rotation about X that puts the floor on the bed
 PLATE_ROOT_FILLET = 1.0  # plate-to-floor inside corner only; the lip root stays sharp
 # so the jacket's front edge seats exactly at LIP_X0 (a fillet there pushes it back ~0.5 mm)
 
@@ -110,7 +114,13 @@ def build():
         .filter_by_position(Axis.X, BACK_T - EPS, BACK_T + EPS)
     )
     assert len(root) == 1, "plate root edge selection"
-    return fillet(root, PLATE_ROOT_FILLET)
+    part = fillet(root, PLATE_ROOT_FILLET)
+
+    # Floor down on the bed: profile Y (up the wall) -> Z; extrusion -> Y in [0, WIDTH].
+    part = Rot(X=FLOOR_DOWN_DEG) * part
+    part = Pos(0, -part.bounding_box().min.Y, 0) * part
+    bed = part.faces().sort_by(Axis.Z)[0]
+    return chamfer(bed.edges(), BED_CHAMFER)
 
 
 def mesh_check(stl_path: Path) -> dict:
@@ -137,14 +147,16 @@ def main():
 
     assert len(solids) == 1, f"expected 1 solid, got {len(solids)}"
     assert valid, "invalid solid"
-    expected = (LIP_X1, BACK_H, WIDTH)
+    expected = (LIP_X1, WIDTH, BACK_H)
     assert all(abs(a - b) < DIM_TOL for a, b in zip(size, expected)), f"bbox {size} != {expected}"
     assert all(s <= e for s, e in zip(sorted(size), sorted(env))), f"bbox {size} exceeds envelope {env}"
     assert abs(bb.min.Z) < BED_TOL, "part not on bed"
-    # Pure Z extrusion = no overhangs in print orientation: every face is a cap (normal ±Z) or a wall (normal ⟂ Z).
+    # No unsupported overhangs: a downward-facing face is either the bed face or within max_overhang_deg of vertical.
+    max_down = math.cos(math.radians(PRINTER["max_overhang_deg"]))
     for f in part.faces():
-        nz = abs(f.normal_at().Z)
-        assert nz < BED_TOL or abs(nz - 1) < BED_TOL, f"face not cap/wall (|nz|={nz:.3f})"
+        nz = f.normal_at().Z
+        on_bed = f.bounding_box().max.Z < BED_TOL
+        assert on_bed or -nz <= max_down + DIM_TOL, f"overhang face (nz={nz:.3f}) at {f.center()}"
     assert volume <= VOLUME_LIMIT_MM3, f"volume {volume:.0f} over {VOLUME_LIMIT_MM3}"
     assert min(BACK_T, FLOOR_T, LIP_T) >= min_wall, "wall thinner than min_wall_mm"
     assert JACKET_GAP > JACKET_T_MAX, "thickest jacket doesn't fit the channel"
