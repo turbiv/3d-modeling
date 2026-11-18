@@ -32,7 +32,7 @@ BACK_H = 60.0  # back plate height, hidden behind the jacket
 FLOOR_T = 2.0
 JACKET_GAP = 11.0  # plate-to-lip channel; jackets up to ~9.5 mm still lean on the wall
 LIP_T = 2.0
-LIP_H = 12.0  # lip height above the floor
+LIP_H = 9.0  # lip height above the floor; lower hides less of the cover art
 LIP_FILLET = 0.9  # rounded lip top so it doesn't mark covers (< LIP_T / 2)
 TOP_FILLET = 0.9  # rounded plate top (< BACK_T / 2)
 BED_CHAMFER = 0.4  # 45° bevel on the bed-face edges hides first-layer squish on the visible underside
@@ -52,7 +52,7 @@ STRIP_MARGIN = 5.0
 # Checks
 MAX_LEAN_DEG = 3.0
 MIN_PLATE_CLEARANCE = 0.5  # thickest jacket must clear the plate top by this much
-MIN_LIP_H = 10.0
+MIN_LIP_H = 6.0  # below this a light upward bump can lift the sleeve over the lip
 VOLUME_LIMIT_MM3 = 30_000.0  # keeps print well under the 3 h slot
 EPS = 1e-3  # edge-selection window
 DIM_TOL = 0.01  # bbox vs spec

@@ -5,12 +5,12 @@ Copy this folder's `plate_2.stl` and `plate_6.stl` (and `plate_4.stl` for Pasila
 ## Plan for 20 holders
 | Visit | File | Holders | Time (est.) | Book |
 |---|---|---|---|---|
-| 1 (test) | plate_2.stl | 2 | ~2.3 h | 3 h |
-| 2 | plate_6.stl | 6 | ~7.0 h | 8 h, Oodi |
-| 3 | plate_6.stl | 6 | ~7.0 h | 8 h, Oodi |
-| 4 | plate_6.stl | 6 | ~7.0 h | 8 h, Oodi |
+| 1 (test) | plate_2.stl | 2 | ~2.2 h | 3 h |
+| 2 | plate_6.stl | 6 | ~6.7 h | 8 h, Oodi |
+| 3 | plate_6.stl | 6 | ~6.7 h | 8 h, Oodi |
+| 4 | plate_6.stl | 6 | ~6.7 h | 8 h, Oodi |
 
-Pasila (6 h max): use `plate_4.stl` (~4.6 h) instead of `plate_6`.
+Pasila (6 h max): use `plate_4.stl` (~4.5 h) instead of `plate_6`.
 Book **Oodi 3D-tulostin 1 (Musta PLA)** for black. One booking at a time.
 
 ## Cura settings

@@ -24,8 +24,8 @@ sleeve stands in it and leans back against the wall. **I need 20.**
 | Seam | on the flat back of the tall plate (the side that goes against the wall). Easiest: turn the part so that face points to the rear of the bed and set seam position = Rear. |
 
 ## Size
-- 15 × 76 × 60 mm (depth × width × height), about **16 g** each, about **320 g** for 20.
-- About 1.1 h each on an Ultimaker S3 at 0.2 mm (~22 h for 20); other printers will differ.
+- 15 × 76 × 60 mm (depth × width × height), about **15 g** each, about **300 g** for 20.
+- About 1.1 h each on an Ultimaker S3 at 0.2 mm (~21 h for 20); other printers will differ.
 
 ![side view](side_view_dimensions.png)
 
@@ -42,4 +42,4 @@ sleeve stands in it and leans back against the wall. **I need 20.**
 **Lyhyesti suomeksi:** 20 kpl, musta PLA. Ulkonäkö on tärkein: huulen etupinta, pohja ja päädyt
 siisteiksi (ei rihmoja, nyppyjä tai saumaa). Tulostetaan STL:n asennossa, pohja alustaa vasten.
 0,2 mm kerros, 3 seinämää, 15 % täyttö, ei tukia, ei brimiä. Sauma takalevyn seinänpuoleiselle
-sivulle. 11 mm:n uran pitää olla vähintään 10,5 mm. Koko 15 × 76 × 60 mm, n. 16 g / kpl.
+sivulle. 11 mm:n uran pitää olla vähintään 10,5 mm. Koko 15 × 76 × 60 mm, n. 15 g / kpl.
